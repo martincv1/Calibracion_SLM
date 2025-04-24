@@ -2,6 +2,7 @@ import numpy as np
 import eBUS as eb
 import lib.PvSampleUtils as psu
 import cv2
+import time
 
 BUFFER_COUNT = 16
 
@@ -118,6 +119,7 @@ if connection_ID:
             buffer_list = configure_stream_buffers(device, stream)
 
             # Captura una sola imagen
+            time.sleep(3)
             frame = get_frame(device, stream)
             if frame is not None:
                 cv2.imshow("Captured Frame", frame)
