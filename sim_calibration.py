@@ -13,14 +13,16 @@ def simular_imagen(Nx=640, Ny=512, angulo_slm_max=1, slm_ancho=500, slm_alto=350
     Parámetros:
     Nx (int): Ancho de la imagen en píxeles. Default es 640.
     Ny (int): Altura de la imagen en píxeles. Default es 512.
-    angulo_max (float): Ángulo máximo de rotación en grados. Default es 4.
-    slm_ancho (int): Ancho del SLM en píxeles. Default es 200.
-    slm_alto (int): Altura del SLM en píxeles. Default es 200.
-    angulo_franjas_max (float): Ángulo máximo de rotación de las franjas en grados. Default es 0.
+    angulo_slm_max (float): Ángulo máximo de rotación del SLM en grados. Default es 1.
+    slm_ancho (int): Ancho del SLM en píxeles. Default es 500.
+    slm_alto (int): Altura del SLM en píxeles. Default es 350.
+    angulo_franjas_max (float): Ángulo máximo de rotación de las franjas en grados. Default es 5.
     fase1 (float): Fase inicial para la primera mitad del SLM. Default es 0.
-    fase2 (float): Fase inicial para la segunda mitad del SLM. Default es np.pi.
+    fase2 (float): Fase inicial para la segunda mitad del SLM. Default es pi.
     frecuencia (float): Frecuencia espacial de las franjas en el SLM. Debe ser un valor positivo que represente el
-                        número de ciclos que entra en un ancho de imagen.
+                        número de ciclos que entra en un ancho de imagen. Default es 10.
+    fotones_por_cuenta (int): Número de fotones que se generan por cada punto del SLM. Default es 5.
+    amplitud_imperfecciones (float): Amplitud de las imperfecciones aleatorias en la imagen. Default es 0.25.
 
     Retorna:
     numpy.ndarray: Imagen simulada como un array de 2D numpy de tipo uint8.
