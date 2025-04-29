@@ -40,7 +40,7 @@ slm  = HEDS.SLM.Init("", True, 0.0)
 assert slm.errorCode() == HEDSERR_NoError, HEDS.SDK.ErrorString(slm.errorCode())
 
 #Este es el bucle de medición
-resol_SLM = (1920, 1080)
+resol_SLM = (1920, 1080) # hay que darlo vuelta para que pase la imagen correcta en el SLM, sino la pasa con fallos
 for i in intensidades_array:
     print(f"Mostrando patrón con intensidad: {i}")
     patron = crear_patron(resol_SLM, "horizontal", "sup", i )
