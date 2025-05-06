@@ -202,46 +202,47 @@ assert slm.errorCode() == HEDSERR_NoError, HEDS.SDK.ErrorString(slm.errorCode())
 
 #Este es el bucle de medición
 resol_SLM = (1080, 1920)
-
-
+time.sleep(120)
+fecha = 3004
 for i in intensidades_array:
-    print(f"Mostrando patrón con intensidad: {i}")
-    patron = crear_patron(resol_SLM, "vertical", "izq", i )
-    #np.save(f"patrones/patron_{idx:03d}.npy", patron)    # va a guardar cada patron como archivo.npy en la carpeta patrones
-    err, dataHandle = slm.loadImageData(patron)  #carga la data (array) a la video memory del display SLM
-    assert err == HEDSERR_NoError, HEDS.SDK.ErrorString(err)
-    err = dataHandle.show() # Show the returned data handle on the SLM
-    assert err == HEDSERR_NoError, HEDS.SDK.ErrorString(err)
-    time.sleep(0.5)
-    # Retrieve next pvbuffer
-    result, pvbuffer, operational_result = stream.RetrieveBuffer(1000)
-    buffer_check(result, operational_result)
-    #
-    # We now have a valid pvbuffer. This is where you would typically process the pvbuffer.
-    # -----------------------------------------------------------------------------------------
-    # ...
-    result, frame_rate_val = frame_rate.GetValue()
-    result, bandwidth_val = bandwidth.GetValue()
-    print(f"{doodle[doodle_index]} BlockID: {pvbuffer.GetBlockID():016d}", end='')
+    for j in range(10):
+        print(f"Mostrando patrón con intensidad: {i}")
+        patron = crear_patron(resol_SLM, "horizontal", "sup", i )
+        #np.save(f"patrones/patron_{idx:03d}.npy", patron)    # va a guardar cada patron como archivo.npy en la carpeta patrones
+        err, dataHandle = slm.loadImageData(patron)  #carga la data (array) a la video memory del display SLM
+        assert err == HEDSERR_NoError, HEDS.SDK.ErrorString(err)
+        err = dataHandle.show() # Show the returned data handle on the SLM
+        assert err == HEDSERR_NoError, HEDS.SDK.ErrorString(err)
+        time.sleep(0.5)
+        # Retrieve next pvbuffer
+        result, pvbuffer, operational_result = stream.RetrieveBuffer(1000)
+        buffer_check(result, operational_result)
+        #
+        # We now have a valid pvbuffer. This is where you would typically process the pvbuffer.
+        # -----------------------------------------------------------------------------------------
+        # ...
+        result, frame_rate_val = frame_rate.GetValue()
+        result, bandwidth_val = bandwidth.GetValue()
+        print(f"{doodle[doodle_index]} BlockID: {pvbuffer.GetBlockID():016d}", end='')
 
-    image = None    
-    payload_type = pvbuffer.GetPayloadType()
-    
-    image = get_data(payload_type) # acá consigue la imagen
+        image = None    
+        payload_type = pvbuffer.GetPayloadType()
+        
+        image = get_data(payload_type) # acá consigue la imagen
 
-    if image:
+        if image:
 
-        print(f"  W: {image.GetWidth()} H: {image.GetHeight()} ", end='')
-        image_data = image.GetDataPointer()
-        #guardar imagen
-        cv2.imwrite(f'fotos/2904_{i}.png', image_data)
+            print(f"  W: {image.GetWidth()} H: {image.GetHeight()} ", end='')
+            image_data = image.GetDataPointer()
+            #guardar imagen
+            cv2.imwrite(f'fotos/{fecha}_I{i}_{j}_T22.png', image_data)
 
-    print(f" {frame_rate_val:.1f} FPS  {bandwidth_val / 1000000.0:.1f} Mb/s     ", end='\r')
-    
-    # Re-queue the pvbuffer in the stream object
-    stream.QueueBuffer(pvbuffer) # Acá manda el buffer a buscar
-    
-    doodle_index = (doodle_index + 1) % 6
+        #print(f" {frame_rate_val:.1f} FPS  {bandwidth_val / 1000000.0:.1f} Mb/s     ", end='\r')
+        
+        # Re-queue the pvbuffer in the stream object
+        stream.QueueBuffer(pvbuffer) # Acá manda el buffer a buscar
+        
+        doodle_index = (doodle_index + 1) % 6
 
 # Acá se cierra el while
 
