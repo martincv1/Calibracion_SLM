@@ -2,7 +2,13 @@ import numpy as np
 import matplotlib.pyplot as plt
 from skimage import draw
 from scipy.ndimage import gaussian_filter
+from scipy.signal import find_peaks
 
+import interfranja as ifranja
+
+
+MINIMUM_DISTANCE_PEAKS = 10
+PROMINENCE_PEAKS = 1
 
 def simular_imagen(Nx=640, Ny=512, angulo_slm_max=1, slm_ancho=500, slm_alto=350, angulo_franjas_max=5,
                    fase1=0, fase2=np.pi, frecuencia=10, fotones_por_cuenta=5, amplitud_imperfecciones=0.25):
@@ -90,6 +96,31 @@ def simular_imagen(Nx=640, Ny=512, angulo_slm_max=1, slm_ancho=500, slm_alto=350
     return imagen
 
 
-imagen = simular_imagen()
-plt.imshow(imagen, cmap='gray')
+imagen = simular_imagen(frecuencia=25)
+crop = imagen[90:220, 100:550]
+fig, axs = plt.subplots(1, 2, figsize=(8, 8))
+axs[0].imshow(imagen, cmap='gray')
+axs[1].imshow(crop, cmap='gray')
 plt.show()
+
+# Rotar la imagen para dejar las franjas más o menos verticales
+img_rotada = ifranja.rotate_image_to_max_frequency(crop)
+
+# Mostrar la imagen original y la rotada
+fig, axs = plt.subplots(1, 3, figsize=(8, 8))
+axs[0].title.set_text("Imagen Original")
+axs[0].imshow(crop, cmap='gray')
+axs[1].title.set_text("Imagen Rotada")
+im = axs[1].imshow(img_rotada, cmap='gray')
+fig.colorbar(im, ax=axs[1])
+
+intensity_profile = np.mean(img_rotada, axis=0)
+intensity_profile = ifranja.remove_gaussian_from_curve(intensity_profile)
+axs[2].plot(intensity_profile)
+plt.show()
+
+# Encontrar los mínimos en el perfil de intensidad
+peaks, _ = find_peaks(-intensity_profile, distance=MINIMUM_DISTANCE_PEAKS,
+                      prominence=PROMINENCE_PEAKS)
+
+print(f"Diferencia entre picos promedio: {np.mean(np.diff(peaks))}")
