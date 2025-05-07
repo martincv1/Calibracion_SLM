@@ -9,6 +9,9 @@ import interfranja as ifranja
 
 MINIMUM_DISTANCE_PEAKS = 10
 PROMINENCE_PEAKS = 1
+SHOW_CROP1 = False
+SHOW_INTERFRANJA = False
+
 
 def simular_imagen(Nx=640, Ny=512, angulo_slm_max=1, slm_ancho=500, slm_alto=350, angulo_franjas_max=5,
                    fase1=0, fase2=np.pi, frecuencia=10, fotones_por_cuenta=5, amplitud_imperfecciones=0.25):
@@ -96,31 +99,76 @@ def simular_imagen(Nx=640, Ny=512, angulo_slm_max=1, slm_ancho=500, slm_alto=350
     return imagen
 
 
+def get_shift_cross_correlation(imagen1, imagen2, padding=0):
+    if padding > 0:
+        imagen1 = np.pad(imagen1, padding)
+        imagen2 = np.pad(imagen2, padding)
+    cross_corr = np.real(np.fft.ifft2(np.fft.fft2(imagen1) * np.conj(np.fft.fft2(imagen2))))
+    cross_corr = np.fft.fftshift(cross_corr)
+    indices = np.unravel_index(np.argmax(cross_corr), cross_corr.shape)
+    shift = indices[0] - cross_corr.shape[0] // 2, indices[1] - cross_corr.shape[1] // 2
+    return shift
+
+
+def get_dphi_fft1d(imagen1, imagen2, get_shift=False):
+    signal1 = np.sum(imagen1, axis=0)
+    signal2 = np.sum(imagen2, axis=0)
+    f_signal1 = np.fft.fft(signal1 - np.mean(signal1))
+    f_signal2 = np.fft.fft(signal2 - np.mean(signal2))
+    freq1 = np.argmax(np.abs(f_signal1))
+    freq2 = np.argmax(np.abs(f_signal2))
+    if freq1 != freq2:
+        raise ValueError("Las franjas no tienen la misma frecuencia espacial")
+    dfase = np.angle(f_signal1[freq1] / f_signal2[freq2])
+
+    if get_shift:
+        N1 = len(signal1)
+        shift = dfase / (2 * np.pi * freq1) * N1
+        return shift
+    return dfase
+
+
+def get_interfranja(imagen, remove_Gaussian_profile=False, show=False):
+    # Rotar la imagen para dejar las franjas más o menos verticales
+    img_rotada = ifranja.rotate_image_to_max_frequency(imagen)
+
+    intensity_profile = np.mean(img_rotada, axis=0)
+    if remove_Gaussian_profile:
+        intensity_profile = ifranja.remove_gaussian_from_curve(intensity_profile)
+
+    if show:
+        # Mostrar la imagen original y la rotada
+        fig, axs = plt.subplots(1, 3, figsize=(8, 8))
+        axs[0].title.set_text("Imagen Original")
+        axs[0].imshow(imagen, cmap='gray')
+        axs[1].title.set_text("Imagen Rotada")
+        im = axs[1].imshow(img_rotada, cmap='gray')
+        fig.colorbar(im, ax=axs[1])
+        axs[2].plot(intensity_profile)
+        plt.show()
+    # Encontrar los mínimos en el perfil de intensidad
+    peaks, _ = find_peaks(-intensity_profile, distance=MINIMUM_DISTANCE_PEAKS,
+                          prominence=PROMINENCE_PEAKS)
+    return np.mean(np.diff(peaks))
+
+
 imagen = simular_imagen(frecuencia=25)
 crop = imagen[90:220, 100:550]
-fig, axs = plt.subplots(1, 2, figsize=(8, 8))
-axs[0].imshow(imagen, cmap='gray')
-axs[1].imshow(crop, cmap='gray')
-plt.show()
+if SHOW_CROP1:
+    fig, axs = plt.subplots(1, 2, figsize=(8, 8))
+    axs[0].imshow(imagen, cmap='gray')
+    axs[1].imshow(crop, cmap='gray')
+    plt.show()
 
-# Rotar la imagen para dejar las franjas más o menos verticales
-img_rotada = ifranja.rotate_image_to_max_frequency(crop)
+if SHOW_INTERFRANJA:
+    interfranja = get_interfranja(crop, remove_Gaussian_profile=False, show=True)
+    print(f"Diferencia entre picos promedio: {interfranja}")
 
-# Mostrar la imagen original y la rotada
-fig, axs = plt.subplots(1, 3, figsize=(8, 8))
-axs[0].title.set_text("Imagen Original")
-axs[0].imshow(crop, cmap='gray')
-axs[1].title.set_text("Imagen Rotada")
-im = axs[1].imshow(img_rotada, cmap='gray')
-fig.colorbar(im, ax=axs[1])
+# Análisis de correlación cruzada
+# crop2 = imagen[270:400, 100:550]
+r_shift = 0
+c_shift = 12
+crop2 = imagen[90+r_shift:220+r_shift, 100+c_shift:550+c_shift]
 
-intensity_profile = np.mean(img_rotada, axis=0)
-intensity_profile = ifranja.remove_gaussian_from_curve(intensity_profile)
-axs[2].plot(intensity_profile)
-plt.show()
-
-# Encontrar los mínimos en el perfil de intensidad
-peaks, _ = find_peaks(-intensity_profile, distance=MINIMUM_DISTANCE_PEAKS,
-                      prominence=PROMINENCE_PEAKS)
-
-print(f"Diferencia entre picos promedio: {np.mean(np.diff(peaks))}")
+shift = get_dphi_fft1d(crop2, crop, get_shift=True)
+print(f"Shift: {shift}")
