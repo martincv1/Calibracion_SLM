@@ -23,11 +23,16 @@ def rotate_bound(image, angle):
     return cv2.warpAffine(image, M, (nW, nH))
 
 fecha = 3004
-guardar = False
+guardar = True
 if guardar:
     for i in range(256):
         for j in range(10):
-            imagen = cv2.imread(f'fotos/{fecha}_I{i}_{j}_T22.png')
-            rotated_image = rotate_bound(imagen, -3)
-            recorte = rotated_image[90:720,340:1380]
-            cv2.imwrite(f'fotos_rot/{fecha}_I{i}_{j}_T22_r.png', recorte)
+            imagen = cv2.imread(f'fotos_rot/{fecha}_I{i}_{j}_T22_r.png')
+            rotated_image = rotate_bound(imagen, -27.5)
+            #recorte = rotated_image[90:720,340:1380]
+            cv2.imwrite(f'fotos_rot_franjas/{fecha}_I{i}_{j}_T22_r_f.png', rotated_image)
+
+imag = cv2.imread('fotos_rot/3004_I247_0_T22_r.png')
+rotated_image = rotate_bound(imag, -27.5)
+plt.imshow(rotated_image*2)
+plt.show()

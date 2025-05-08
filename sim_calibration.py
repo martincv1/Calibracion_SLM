@@ -5,7 +5,7 @@ from scipy.ndimage import gaussian_filter
 from scipy.signal import find_peaks
 import cv2
 import interfranja as ifranja
-
+import pandas as pd
 
 MINIMUM_DISTANCE_PEAKS = 10
 PROMINENCE_PEAKS = 1
@@ -116,10 +116,8 @@ def get_dphi_fft1d(imagen1, imagen2, get_shift=False):
     f_signal1 = np.fft.fft(signal1 - np.mean(signal1))
     f_signal2 = np.fft.fft(signal2 - np.mean(signal2))
     n = len(f_signal1)
-    #freq1 = np.argmax(np.abs(f_signal1[:n//2]))
-    #freq2 = np.argmax(np.abs(f_signal2[:n//2]))
-    freq1 = np.argmax(np.abs(f_signal1[:n//6]))
-    freq2 = np.argmax(np.abs(f_signal2[:n//6]))
+    freq1 = np.argmax(np.abs(f_signal1[:n//2]))
+    freq2 = np.argmax(np.abs(f_signal2[:n//2]))
     if abs(freq1-freq2)>2:
         print(freq1, freq2)
         raise ValueError("Las franjas no tienen la misma frecuencia espacial")
@@ -175,17 +173,27 @@ r_shift = 0
 c_shift = 12
 crop2 = imagen[90+r_shift:220+r_shift, 100+c_shift:550+c_shift]
 
-imag = cv2.imread('fotos_rot/3004_I68_0_T22_r.png')
-recorte1 = imag[250:255, 30:570, 0]
-recorte2 = imag[420:425, 30:570, 0]
-señal1 = np.sum(recorte1, axis = 0)
-señal2 = np.sum(recorte2, axis = 0)
-fft1 = abs(np.fft.fft(señal1-np.mean(señal1)))
-fft2 = abs(np.fft.fft(señal2-np.mean(señal2)))
-plt.plot(fft1[:len(fft1)//2], label = '1')
-plt.plot(fft2[:len(fft2)//2], label = '2', linestyle = '--')
-plt.legend()
-plt.show()
+imag = cv2.imread('fotos_rot_franjas/3004_I0_0_T22_r_f.png')
+#plt.imshow(imag)
+#plt.show()
+#recorte1 = imag[495:555, 170:570, 0]
+#recorte2 = imag[690:750, 350:750, 0]
+#fig, axs = plt.subplots(1, 2, figsize=(8, 8))
+#axs[0].imshow(recorte1, cmap='gray')
+#axs[1].imshow(recorte2, cmap='gray')
+#plt.imshow(recorte1)
+#plt.show()
+#señal1 = np.sum(recorte1, axis = 0)
+#señal2 = np.sum(recorte2, axis = 0)
+#plt.plot(señal1[:100])
+#plt.plot(señal2[:100])
+#plt.show()
+#fft1 = abs(np.fft.fft(señal1-np.mean(señal1)))
+#fft2 = abs(np.fft.fft(señal2-np.mean(señal2)))
+#plt.plot(fft1[:len(fft1)//2], label = '1')
+#plt.plot(fft2[:len(fft2)//2], label = '2', linestyle = '--')
+#plt.legend()
+#plt.show()
 
 #shift = get_dphi_fft1d(recorte2, recorte1, get_shift=True)
 #print(f"Shift: {shift}")
@@ -194,10 +202,25 @@ if run:
     shifts = np.zeros(256)
     for i in range(256):
         print(i)
-        imag = cv2.imread(f'fotos_rot/3004_I{i}_0_T22_r.png')
-        recorte1 = imag[250:255, 30:570, 0]
-        recorte2 = imag[420:425, 30:570, 0]
-        shift = get_dphi_fft1d(recorte1, recorte2, get_shift=True)
+        imag = cv2.imread(f'fotos_rot_franjas/3004_I{i}_9_T22_r_f.png')
+        recorte1 = imag[495:555, 170:570, 0]
+        recorte2 = imag[690:750, 350:750, 0]
+        shift = get_dphi_fft1d(recorte1, recorte2, get_shift=False)
         shifts[i] = shift
-    plt.scatter(np.arange(256), shifts)
+    shifts -= shifts[0]
+    for i in range(256):
+        while abs(shifts[i])>np.pi:
+            if shifts[i]>0:
+                shifts[i]-=np.pi
+            else:
+                shifts[i]+=np.pi
+    plt.errorbar(np.arange(256), shifts, capsize = 3, markersize = 3, fmt = 'o', label= 'fase', color ='r')
+    plt.xlabel('Valores de gris')
+    plt.ylabel('Diferencia de fase')
+    plt.legend()
+    #plt.savefig('workdir/calibracion_curva.svg')
     plt.show()
+
+
+df = pd.DataFrame(data = shifts)
+df.to_csv('workdir/fases_9.csv')
