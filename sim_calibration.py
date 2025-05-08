@@ -3,7 +3,7 @@ import matplotlib.pyplot as plt
 from skimage import draw
 from scipy.ndimage import gaussian_filter
 from scipy.signal import find_peaks
-
+import cv2
 import interfranja as ifranja
 
 
@@ -115,9 +115,13 @@ def get_dphi_fft1d(imagen1, imagen2, get_shift=False):
     signal2 = np.sum(imagen2, axis=0)
     f_signal1 = np.fft.fft(signal1 - np.mean(signal1))
     f_signal2 = np.fft.fft(signal2 - np.mean(signal2))
-    freq1 = np.argmax(np.abs(f_signal1))
-    freq2 = np.argmax(np.abs(f_signal2))
-    if freq1 != freq2:
+    n = len(f_signal1)
+    #freq1 = np.argmax(np.abs(f_signal1[:n//2]))
+    #freq2 = np.argmax(np.abs(f_signal2[:n//2]))
+    freq1 = np.argmax(np.abs(f_signal1[:n//6]))
+    freq2 = np.argmax(np.abs(f_signal2[:n//6]))
+    if abs(freq1-freq2)>2:
+        print(freq1, freq2)
         raise ValueError("Las franjas no tienen la misma frecuencia espacial")
     dfase = np.angle(f_signal1[freq1] / f_signal2[freq2])
 
@@ -154,6 +158,7 @@ def get_interfranja(imagen, remove_Gaussian_profile=False, show=False):
 
 imagen = simular_imagen(frecuencia=25)
 crop = imagen[90:220, 100:550]
+SHOW_CROP1 = False
 if SHOW_CROP1:
     fig, axs = plt.subplots(1, 2, figsize=(8, 8))
     axs[0].imshow(imagen, cmap='gray')
@@ -170,5 +175,29 @@ r_shift = 0
 c_shift = 12
 crop2 = imagen[90+r_shift:220+r_shift, 100+c_shift:550+c_shift]
 
-shift = get_dphi_fft1d(crop2, crop, get_shift=True)
-print(f"Shift: {shift}")
+imag = cv2.imread('fotos_rot/3004_I68_0_T22_r.png')
+recorte1 = imag[250:255, 30:570, 0]
+recorte2 = imag[420:425, 30:570, 0]
+señal1 = np.sum(recorte1, axis = 0)
+señal2 = np.sum(recorte2, axis = 0)
+fft1 = abs(np.fft.fft(señal1-np.mean(señal1)))
+fft2 = abs(np.fft.fft(señal2-np.mean(señal2)))
+plt.plot(fft1[:len(fft1)//2], label = '1')
+plt.plot(fft2[:len(fft2)//2], label = '2', linestyle = '--')
+plt.legend()
+plt.show()
+
+#shift = get_dphi_fft1d(recorte2, recorte1, get_shift=True)
+#print(f"Shift: {shift}")
+run = True
+if run:
+    shifts = np.zeros(256)
+    for i in range(256):
+        print(i)
+        imag = cv2.imread(f'fotos_rot/3004_I{i}_0_T22_r.png')
+        recorte1 = imag[250:255, 30:570, 0]
+        recorte2 = imag[420:425, 30:570, 0]
+        shift = get_dphi_fft1d(recorte1, recorte2, get_shift=True)
+        shifts[i] = shift
+    plt.scatter(np.arange(256), shifts)
+    plt.show()

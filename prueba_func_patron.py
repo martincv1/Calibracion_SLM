@@ -40,18 +40,25 @@ assert err == HEDSERR_NoError, HEDS.SDK.ErrorString(err)
 # Open device detection and retrieve one SLM, and open the SLM Preview window in "Fit" mode for the selected SLM:
 slm  = HEDS.SLM.Init("", True, 0.0)
 assert slm.errorCode() == HEDSERR_NoError, HEDS.SDK.ErrorString(slm.errorCode())
-
+bucle = True
 #Este es el bucle de medición
 resol_SLM = (1080, 1920)
-for i in intensidades_array:
-    print(f"Mostrando patrón con intensidad: {i}")
-    patron = crear_patron(resol_SLM, "vertical", "izq", i )
-    #np.save(f"patrones/patron_{idx:03d}.npy", patron)    # va a guardar cada patron como archivo.npy en la carpeta patrones
+if bucle:
+    for i in intensidades_array:
+        print(f"Mostrando patrón con intensidad: {i}")
+        patron = crear_patron(resol_SLM, "horizontal", "sup", i )
+        #np.save(f"patrones/patron_{idx:03d}.npy", patron)    # va a guardar cada patron como archivo.npy en la carpeta patrones
+        err, dataHandle = slm.loadImageData(patron)  #carga la data (array) a la video memory del display SLM
+        assert err == HEDSERR_NoError, HEDS.SDK.ErrorString(err)
+        err = dataHandle.show() # Show the returned data handle on the SLM
+        assert err == HEDSERR_NoError, HEDS.SDK.ErrorString(err)
+        time.sleep(3)
+else:
+    patron = crear_patron(resol_SLM, "horizontal", "sup", 255 )
     err, dataHandle = slm.loadImageData(patron)  #carga la data (array) a la video memory del display SLM
     assert err == HEDSERR_NoError, HEDS.SDK.ErrorString(err)
     err = dataHandle.show() # Show the returned data handle on the SLM
     assert err == HEDSERR_NoError, HEDS.SDK.ErrorString(err)
-    time.sleep(3)
 
 # Wait until each opened SLM window was closed manually by using the tray icon GUI:
 HEDS.SDK.WaitAllClosed()
